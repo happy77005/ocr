@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>i2t</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode {
+            background-color: #333;
+            color: #f0f0f0;
+        }
+
+        .dark-mode .container {
+            background-color: #444;
+            color: #f0f0f0;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .file-upload {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .file-upload.dragover {
+            background-color: #e0e0e0;
+        }
+
+        #output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .toggle-mode {
+            margin-top: 20px;
+        }
+
+        .btn-upload {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .btn-upload:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-clear {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background-color: #a71d2a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image To Text Converter</h1>
+
+        <div id="file-upload" class="file-upload">
+            Drag and drop files here or click to upload
+        </div>
+        <input type="file" id="file-input" multiple style="display: none;">
+
+        <button class="btn-upload" id="upload-button">convert to text</button>
+        <button class="btn-clear" id="clear-button">Clear</button>
+
+        <div id="output"></div>
+
+        <button class="toggle-mode" id="toggle-mode">Toggle Dark Mode</button>
+    </div>
+
+    <script>
+        const fileUpload = document.getElementById('file-upload');
+        const fileInput = document.getElementById('file-input');
+        const uploadButton = document.getElementById('upload-button');
+        const clearButton = document.getElementById('clear-button');
+        const output = document.getElementById('output');
+        const toggleModeButton = document.getElementById('toggle-mode');
+
+        let files = [];
+
+        // Handle drag and drop
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            files = Array.from(e.dataTransfer.files);
+            displayFileNames();
+        });
+
+        fileUpload.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            files = Array.from(e.target.files);
+            displayFileNames();
+        });
+
+        function displayFileNames() {
+            output.innerHTML = files.map(file => `<p>${file.name}</p>`).join('');
+        }
+
+        uploadButton.addEventListener('click', () => {
+            if (files.length === 0) {
+                output.innerHTML = '<p style="color:red;">No files selected</p>';
+                return;
+            }
+
+            const formData = new FormData();
+            files.forEach(file => formData.append('images', file));
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    output.innerHTML = `<pre>${data.text}</pre>`;
+                } else {
+                    output.innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
+                }
+            })
+            .catch(error => {
+                output.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+            });
+        });
+
+        clearButton.addEventListener('click', () => {
+            files = [];
+            output.innerHTML = '';
+        });
+
+        // Toggle dark mode
+        toggleModeButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+    </script>
+</body>
+</html>
